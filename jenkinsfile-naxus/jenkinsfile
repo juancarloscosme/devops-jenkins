@@ -1,0 +1,69 @@
+pipeline {
+    agent any
+    environment{
+        
+        NEXUS_URL = '172.22.95.214:8083'
+        NEXUS_REPO = 'hacom'  // Repositorio en Nexus
+        IMAGE_NAME = 'myapp'  // Nombre de la imagen de Docker
+        TAG = "${env.BUILD_NUMBER}"       // Usar el número de build como tag
+        
+    }
+    
+    stages {
+        stage('Clone') {
+            steps {
+                git branch: "main", url: 'https://github.com/josedom24/jenkins_docker.git'
+            }
+
+        }
+        stage('Build') {
+            steps {
+                script {
+                    //newApp = docker.build "$IMAGE_NAME:$TAG"
+                    sh "docker build -t ${IMAGE_NAME}:${TAG} ."
+
+                }
+            }
+        }
+
+        stage('Test') {
+            steps {
+                script {
+                    //docker.image("$IMAGEN_NAME:$TAG").inside('-u root') {
+                    //       sh 'apache2ctl -v'
+                    docker.image("${IMAGE_NAME}:${TAG}").inside('-u root') {
+                        sh 'apache2ctl -v'
+                        }
+                    }
+            }
+        }
+        
+        
+        stage('Deploy') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials_hacom', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                        // Loguearse en Nexus
+                        sh "echo '${PASSWORD}' | docker login ${NEXUS_URL} --username ${USERNAME} --password-stdin"
+                        
+                        // Etiquetar la imagen para Nexus
+                        sh "docker tag ${IMAGE_NAME}:${TAG} ${NEXUS_URL}/${NEXUS_REPO}/${IMAGE_NAME}:${TAG}"
+                    
+                    // Subir la imagen a Nexus
+                        sh "docker push ${NEXUS_URL}/${NEXUS_REPO}/${IMAGE_NAME}:${TAG}"                        
+
+                    }
+                }
+            }
+        }
+
+
+        stage('Clean Up') {
+            steps {
+                sh "docker rmi $NEXUS_URL/$NEXUS_REPO/$IMAGE_NAME:$TAG"
+                }
+        }
+    }
+
+    }
+    
