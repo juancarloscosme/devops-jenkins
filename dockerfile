@@ -1,15 +1,12 @@
-# Usar la imagen oficial de Nginx como base
-FROM nginx:alpine
-
-# Copiar el archivo de configuración de Nginx (opcional)
-COPY nginx.conf /etc/nginx/nginx.conf
-
-# Copiar los archivos estáticos a la carpeta predeterminada de Nginx
-COPY html /usr/share/nginx/html
-
-# Exponer el puerto 80
-EXPOSE 80
-
-# Comando por defecto para ejecutar Nginx
-CMD ["nginx", "-g", "daemon off;"]
-
+# syntax=docker/dockerfile:1
+FROM eclipse-temurin:8-jre-jammy
+RUN apt-get update -y && apt-get clean && apt-get install dumb-init tzdata -y
+RUN groupadd -g 1004 hacom
+RUN useradd -u 1004 -g 1004 hacom
+WORKDIR /opt/app
+VOLUME ["/opt/app/data/", "/opt/app/logs/"]
+ARG JAR_FILE
+COPY ApiComunicationPublicWarningSystem-0.0.44.jar /opt/app/app.jar
+RUN chown -R hacom:hacom /opt/app
+USER hacom:hacom
+CMD dumb-init java -Dlog4j.configurationFile=/opt/app/data/configs/log4j2.xml -Dfile.encoding=UTF-8 -Xms${JVM_XMS} -Xmx${JVM_XMX} -Dspring.config.location=/opt/app/data/configs/config.yml -server -jar app.jar
