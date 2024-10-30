@@ -1,12 +1,16 @@
-# Usa la imagen oficial de Nginx
-FROM nginx:latest
+# Usar una imagen base de Ubuntu
+FROM ubuntu:20.04
 
-# Copia tus archivos de configuración y contenido al contenedor
-COPY ./html /usr/share/nginx/html
-COPY ./nginx.conf /etc/nginx/nginx.conf
+# Actualizar el sistema e instalar Apache
+RUN apt-get update && \
+    apt-get install -y apache2 && \
+    apt-get clean
 
-# Expone el puerto 80
+# Copiar archivos de la aplicación al contenedor
+COPY ./mi_aplicacion /var/www/html
+
+# Exponer el puerto 80
 EXPOSE 80
 
-# Comando por defecto
-CMD ["nginx", "-g", "daemon off;"]
+# Comando para iniciar Apache en primer plano
+CMD ["apachectl", "-D", "FOREGROUND"]
