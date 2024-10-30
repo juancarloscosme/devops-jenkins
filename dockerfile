@@ -1,12 +1,12 @@
-# syntax=docker/dockerfile:1
-FROM eclipse-temurin:8-jre-jammy
-RUN apt-get update -y && apt-get clean && apt-get install dumb-init tzdata -y
-RUN groupadd -g 1004 hacom
-RUN useradd -u 1004 -g 1004 hacom
-WORKDIR /opt/app
-VOLUME ["/opt/app/data/", "/opt/app/logs/"]
-ARG JAR_FILE
-COPY ApiComunicationPublicWarningSystem-0.0.44.jar /opt/app/app.jar
-RUN chown -R hacom:hacom /opt/app
-USER hacom:hacom
-CMD dumb-init java -Dlog4j.configurationFile=/opt/app/data/configs/log4j2.xml -Dfile.encoding=UTF-8 -Xms${JVM_XMS} -Xmx${JVM_XMX} -Dspring.config.location=/opt/app/data/configs/config.yml -server -jar app.jar
+# Usa la imagen oficial de Nginx
+FROM nginx:latest
+
+# Copia tus archivos de configuración y contenido al contenedor
+COPY ./html /usr/share/nginx/html
+COPY ./nginx.conf /etc/nginx/nginx.conf
+
+# Expone el puerto 80
+EXPOSE 80
+
+# Comando por defecto
+CMD ["nginx", "-g", "daemon off;"]
